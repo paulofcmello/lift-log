@@ -60,14 +60,12 @@ section{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow
 .ex.open .sets{display:block}
 .last{font-size:13px;color:var(--muted);margin-bottom:10px}
 .last b{color:var(--ink)}
-.row{display:grid;grid-template-columns:44px 1fr 1fr 44px;gap:8px;align-items:center;margin-bottom:8px}
+.row{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .row .i{font-size:13px;font-weight:700;color:var(--muted)}
 .field{position:relative}
 .field input{width:100%;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 34px 0 12px;font-size:16px;font-weight:700;background:var(--bg)}
 .field input::placeholder{color:#9A958C;font-weight:600}
 .field span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-weight:600;pointer-events:none}
-.tick{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
-.tick[aria-pressed=true]{background:var(--ok);border-color:var(--ok);color:#fff}
 .row.done input{border-color:transparent;background:#EAF3ED}
 .addset{font-size:14px;font-weight:700;color:var(--accent);padding:6px 0;display:inline-flex;gap:6px;align-items:center}
 .run{padding:16px;display:grid;gap:12px}
@@ -104,8 +102,8 @@ nav button[aria-current=page] svg{animation:pop .6s var(--spring)}
 .days button[aria-current=page]{font-weight:700}
 .days button[aria-current=page] b{color:var(--accent)}
 @keyframes pop{from{scale:.6}to{scale:1}}
-.chip,.tick,.addset,.finish,.exhead{transition:scale .45s var(--spring);-webkit-tap-highlight-color:transparent}
-.chip:active,.tick:active,.addset:active,.finish:not(:disabled):active{scale:.93}
+.chip,.addset,.finish,.exhead{transition:scale .45s var(--spring);-webkit-tap-highlight-color:transparent}
+.chip:active,.addset:active,.finish:not(:disabled):active{scale:.93}
 .exhead:active{scale:.985}
 body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:
   radial-gradient(28rem 22rem at 15% 92%,rgba(217,112,30,.16),transparent 60%),
@@ -193,6 +191,8 @@ function lastFor(exId){ for(let i=db.sessions.length-1;i>=0;i--){ const s=db.ses
 function draft(){ const d=PLAN[cur]; if(!db.drafts[d.id]){
   db.drafts[d.id] = d.run ? {km:'',min:''} : Object.fromEntries(d.ex.map(([id,,n])=>[id,Array.from({length:n},()=>({w:'',r:'',done:false}))])) }
   return db.drafts[d.id] }
+const logged=x=>String(x.w).trim()!==''||String(x.r).trim()!=='';
+const phFor=(id,k)=>{ const l=lastFor(id); return l?.[k]||l?.at(-1) };
 function muscleLevels(d){ const lv={}; (d.run?RUN_MUSCLES.map(m=>[m]):d.ex.map(e=>e[4])).forEach(ms=>ms.forEach(m=>lv[m]=(lv[m]||0)+1)); return lv }
 const fmtSet=x=>`${[x.w!=null&&`${x.w} kg`,x.r&&`${x.r} reps`].filter(Boolean).join(' × ')}${x.note?` (${esc(x.note)})`:''}`;
 const fmtDate=t=>new Date(t).toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
@@ -236,18 +236,18 @@ function today(){
       <div class="pace"><span class="last">${last?`Last run: <b>${last.run.km} km</b> at ${pace(last.run.km,last.run.min)} /km`:'First run logged here'}</span><strong id="pace">${pace(+dr.km,+dr.min)}<small style="font-size:14px;color:var(--muted)"> /km</small></strong></div></section>`;
   } else {
     html+=`<section class="list"><h2>${d.ex.length} exercises</h2>${d.ex.map(([id,name,n,reps,ms])=>{
-      const sets=dr[id], done=sets.filter(s=>s.done).length, last=lastFor(id);
+      const sets=dr[id], done=sets.filter(logged).length, last=lastFor(id);
       return `<div class="ex ${open===id?'open':''}" data-ex="${id}">
         <button class="exhead" data-toggle="${id}" aria-expanded="${open===id}"><div class="t"><div class="n">${esc(name)}</div><div class="s">${n} × ${reps} · ${ms.map(x=>MUSCLE_NAMES[x]).join(', ')}</div></div>
         <span class="count ${done>=sets.length?'done':''}">${done}/${sets.length}</span>${I.chev}</button>
         <div class="sets"><p class="last">${last?`Last time: <b>${last.map(fmtSet).join(', ')}</b>`:'No history yet. Log your first sets.'}</p>
-        ${sets.map((s,k)=>{const ph=last?.[k]||last?.[last.length-1];return `<div class="row ${s.done?'done':''}"><span class="i">Set ${k+1}</span>
+        ${sets.map((s,k)=>{const ph=phFor(id,k);return `<div class="row ${logged(s)?'done':''}"><span class="i">Set ${k+1}</span>
           <div class="field"><input inputmode="decimal" aria-label="Set ${k+1} weight" data-set="${id}:${k}:w" value="${esc(s.w)}" placeholder="${ph?.w??'kg'}"><span>kg</span></div>
           <div class="field"><input inputmode="numeric" aria-label="Set ${k+1} reps" data-set="${id}:${k}:r" value="${esc(s.r)}" placeholder="${ph?.r||reps}"><span>reps</span></div>
-          <button class="tick" data-tick="${id}:${k}" aria-pressed="${s.done}" aria-label="Mark set ${k+1} done">${I.check}</button></div>`}).join('')}
+</div>`}).join('')}
         <button class="addset" data-add="${id}">${I.plus} Add set</button></div></div>`}).join('')}</section>`;
   }
-  const can = d.run ? (+dr.km>0&&+dr.min>0) : Object.values(dr).some(s=>s.some(x=>x.done));
+  const can = d.run ? (+dr.km>0&&+dr.min>0) : Object.values(dr).some(s=>s.some(logged));
   return html+`<button class="finish" data-finish ${can?'':'disabled'}>Finish workout</button>`;
 }
 
@@ -346,19 +346,12 @@ $app.addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return; const ds=b.dataset;
   if(ds.day){ cur=+ds.day; open=null }
   else if(ds.toggle){ open = open===ds.toggle?null:ds.toggle }
-  else if(ds.add){ const s=draft()[ds.add]; s.push({w:s.at(-1)?.w||'',r:'',done:false}); save() }
-  else if(ds.tick){
-    const [id,k]=ds.tick.split(':'), s=draft()[id][k], row=b.closest('.row');
-    if(!s.done){ // empty fields take the placeholder (last time / plan) so tapping ✓ is enough when nothing changed
-      const [w,r]=row.querySelectorAll('input'); s.w=s.w||w.placeholder; s.r=s.r||r.placeholder;
-      if(!(+s.w>=0&&+s.r>0)){ toast('Enter weight and reps first'); return }
-    }
-    s.done=!s.done; save();
-  }
+  else if(ds.add){ const s=draft()[ds.add]; s.push({w:'',r:''}); save() }
   else if('finish' in ds){
     const d=PLAN[cur], dr=draft(), sess={t:Date.now(), day:d.id};
     if(d.run) sess.run={km:+dr.km, min:+dr.min};
-    else sess.sets=Object.fromEntries(Object.entries(dr).map(([id,s])=>[id,s.filter(x=>x.done).map(x=>({w:+x.w,r:+x.r}))]).filter(([,s])=>s.length));
+    else sess.sets=Object.fromEntries(Object.entries(dr).map(([id,s])=>[id,s.map((x,k)=>{ if(!logged(x)) return null; const ph=phFor(id,k), reps=d.ex.find(e=>e[0]===id)[3];
+      return {w:x.w!==''?+x.w:ph?.w, r:x.r!==''?+x.r:(ph?.r||reps)} }).filter(Boolean)]).filter(([,s])=>s.length));
     db.sessions.push(sess); delete db.drafts[d.id]; save();
     cur=(cur+1)%PLAN.length; open=null; toast(`${d.name} saved`);
   }
@@ -367,11 +360,14 @@ $app.addEventListener('click',e=>{
 });
 $app.addEventListener('input',e=>{
   const el=e.target, dr=draft();
-  if(el.dataset.set){ const [id,k,f]=el.dataset.set.split(':'); dr[id][k][f]=el.value }
+  if(el.dataset.set){ const [id,k,f]=el.dataset.set.split(':'), sets=dr[id]; sets[k][f]=el.value;
+    el.closest('.row').classList.toggle('done',logged(sets[k]));
+    const c=el.closest('.ex').querySelector('.count'), n=sets.filter(logged).length;
+    c.textContent=`${n}/${sets.length}`; c.classList.toggle('done',n>=sets.length) }
   else if(el.dataset.run){ dr[el.dataset.run]=el.value; document.getElementById('pace').firstChild.textContent=pace(+dr.km,+dr.min) }
   save();
   const btn=$app.querySelector('[data-finish]');
-  if(btn&&PLAN[cur].run) btn.disabled=!(+dr.km>0&&+dr.min>0);
+  if(btn) btn.disabled=PLAN[cur].run ? !(+dr.km>0&&+dr.min>0) : !Object.values(dr).some(s=>s.some(logged));
 });
 
 // self-check
