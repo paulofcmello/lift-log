@@ -16,6 +16,7 @@
 :root{
   --bg:#F3F1EC; --surface:#FFFFFF; --ink:#1C1B19; --muted:#66625B; --line:#E7E3DB;
   --accent:#D9701E; --accent-soft:#F4CFAE; --idle:#E2DED5; --head:#D3CEC4; --ok:#2F7D4F;
+  --spring:linear(0,.009,.035 2.1%,.141,.281 6.7%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1);
   --r:16px; --shadow:0 6px 20px -8px rgba(60,45,25,.18);
 }
 *{box-sizing:border-box;margin:0}
@@ -76,13 +77,20 @@ section{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow
 .pace strong{font-size:28px;font-weight:800;letter-spacing:-.02em}
 .finish{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:calc(100% - 32px);max-width:398px;height:54px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:16px;box-shadow:0 10px 24px -10px rgba(0,0,0,.45)}
 .finish:disabled{background:#B9B4AA;box-shadow:none;cursor:not-allowed}
-nav{position:fixed;z-index:10;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:4px;padding:5px;border-radius:999px;
+nav{scale:1;transition:scale .55s var(--spring);position:fixed;z-index:10;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:4px;padding:5px;border-radius:999px;
   border:1px solid rgba(30,33,45,.12);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(179,179,179,.06));
   box-shadow:0 10px 30px rgba(30,33,45,.12),inset 0 1px 0 rgba(255,255,255,.55),inset 0 0 0 1px rgba(255,255,255,.12),inset 0 -1px 0 rgba(255,255,255,.06);
   -webkit-backdrop-filter:blur(3px) saturate(125%);backdrop-filter:blur(3px) saturate(125%)}
-nav button{width:76px;height:50px;display:grid;place-items:center;border-radius:999px;color:var(--muted);transition:color .3s cubic-bezier(.16,1,.3,1),transform .2s cubic-bezier(.16,1,.3,1)}
+nav button{width:76px;height:50px;display:grid;place-items:center;border-radius:999px;color:var(--muted);transition:color .3s cubic-bezier(.16,1,.3,1);-webkit-tap-highlight-color:transparent}
+nav button svg{transition:scale .5s var(--spring),translate .5s var(--spring)}
 nav button[aria-current=page]{color:var(--accent)}
-nav button:active{transform:scale(.9)}
+nav button[aria-current=page] svg{animation:pop .6s var(--spring)}
+nav.pressing{scale:1.06}
+nav button:active svg{scale:.78;translate:0 1px}
+@keyframes pop{from{scale:.6}to{scale:1}}
+.chip,.tick,.addset,.finish,.exhead{transition:scale .45s var(--spring);-webkit-tap-highlight-color:transparent}
+.chip:active,.tick:active,.addset:active,.finish:not(:disabled):active{scale:.93}
+.exhead:active{scale:.985}
 body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:
   radial-gradient(28rem 22rem at 15% 92%,rgba(217,112,30,.16),transparent 60%),
   radial-gradient(24rem 20rem at 90% 80%,rgba(244,207,174,.45),transparent 62%),
@@ -96,7 +104,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:15px}
 .toast{position:fixed;left:50%;top:16px;transform:translate(-50%,-80px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;transition:transform .4s cubic-bezier(.16,1,.3,1)}
 .toast.show{transform:translate(-50%,0)}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -241,6 +249,7 @@ function history(){
 const $nav=document.createElement('nav'); $nav.setAttribute('aria-label','Sections');
 $nav.innerHTML=`<button data-view="today" aria-label="Today">${I.today}</button><button data-view="history" aria-label="History">${I.hist}</button>`;
 document.body.appendChild($nav);
+['pointerdown','pointerup','pointercancel','pointerleave'].forEach(t=>$nav.addEventListener(t,()=>$nav.classList.toggle('pressing',t==='pointerdown')));
 $nav.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b){ view=b.dataset.view; scrollTo(0,0); render() } });
 
 // Liquid-glass refraction, vanilla port of the liquid-glass skill's directive.
