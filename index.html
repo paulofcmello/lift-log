@@ -20,7 +20,7 @@
 }
 *{box-sizing:border-box;margin:0}
 html{background:var(--bg)}
-body{font-family:Manrope,system-ui,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+body{isolation:isolate;font-family:Manrope,system-ui,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 ::selection{background:var(--accent-soft)}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0}
@@ -77,11 +77,16 @@ section{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow
 .finish{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:calc(100% - 32px);max-width:398px;height:54px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:16px;box-shadow:0 10px 24px -10px rgba(0,0,0,.45)}
 .finish:disabled{background:#B9B4AA;box-shadow:none;cursor:not-allowed}
 nav{position:fixed;z-index:10;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom));display:flex;gap:4px;padding:5px;border-radius:999px;
-  background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(18px) saturate(180%);backdrop-filter:blur(18px) saturate(180%);
-  box-shadow:0 12px 32px -12px rgba(40,30,15,.4),0 1px 3px rgba(40,30,15,.08),inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(0,0,0,.04)}
-nav button{width:76px;height:50px;display:grid;place-items:center;border-radius:999px;color:var(--muted);transition:background .3s cubic-bezier(.16,1,.3,1),color .3s}
-nav button[aria-current=page]{background:rgba(28,27,25,.08);color:var(--ink)}
-nav button:active{transform:scale(.94)}
+  border:1px solid rgba(30,33,45,.12);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(179,179,179,.06));
+  box-shadow:0 10px 30px rgba(30,33,45,.12),inset 0 1px 0 rgba(255,255,255,.55),inset 0 0 0 1px rgba(255,255,255,.12),inset 0 -1px 0 rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(3px) saturate(125%);backdrop-filter:blur(3px) saturate(125%)}
+nav button{width:76px;height:50px;display:grid;place-items:center;border-radius:999px;color:var(--muted);transition:color .3s cubic-bezier(.16,1,.3,1),transform .2s cubic-bezier(.16,1,.3,1)}
+nav button[aria-current=page]{color:var(--accent)}
+nav button:active{transform:scale(.9)}
+body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(28rem 22rem at 15% 92%,rgba(217,112,30,.16),transparent 60%),
+  radial-gradient(24rem 20rem at 90% 80%,rgba(244,207,174,.45),transparent 62%),
+  radial-gradient(30rem 24rem at 80% 5%,rgba(244,207,174,.35),transparent 60%)}
 .hist .day{padding:14px 16px;border-top:1px solid var(--line)}
 .hist .day:first-of-type{border-top:0}
 .hist .dh{display:flex;justify-content:space-between;font-weight:700}
@@ -233,10 +238,56 @@ function history(){
     :'<p class="empty">No workouts yet. Finish one on Today and it shows up here.</p>'}</section>`;
 }
 
+const $nav=document.createElement('nav'); $nav.setAttribute('aria-label','Sections');
+$nav.innerHTML=`<button data-view="today" aria-label="Today">${I.today}</button><button data-view="history" aria-label="History">${I.hist}</button>`;
+document.body.appendChild($nav);
+$nav.addEventListener('click',e=>{ const b=e.target.closest('button'); if(b){ view=b.dataset.view; scrollTo(0,0); render() } });
+
+// Liquid-glass refraction, vanilla port of the liquid-glass skill's directive.
+// Field formulas from dashersw/liquid-glass-js (MIT, (c) 2025 Armagan Amcalar).
+// Chromium only: Safari parses url() backdrop filters but paints nothing, so it keeps the CSS blur fallback.
+function liquidGlass(el,id){
+  const chromium = navigator.userAgentData?.brands?.some(b=>/Chrom|Edge/.test(b.brand)) || /Chrome\//.test(navigator.userAgent);
+  if(!chromium) return;
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg'); svg.setAttribute('width',0); svg.setAttribute('height',0); svg.style.position='absolute';
+  document.body.appendChild(svg);
+  const build=()=>{
+    const {width:w,height:h}=el.getBoundingClientRect(); if(!w||!h) return;
+    const r=Math.min(parseFloat(getComputedStyle(el).borderTopLeftRadius)||0,Math.min(w,h)/2);
+    const pw=innerWidth, ph=innerHeight, S=2, W=Math.round(w*S), H=Math.round(h*S), m=Math.min(w,h);
+    const dx=new Float32Array(W*H), dy=new Float32Array(W*H); let max=0;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      const px=(x+.5)/S, py=(y+.5)/S, cx=px/w, cy=py/h;
+      const tx=Math.abs(px-w/2)-(w/2-r), ty=Math.abs(py-h/2)-(h/2-r);
+      const d=Math.max(-(Math.hypot(Math.max(tx,0),Math.max(ty,0))+Math.min(Math.max(tx,ty),0)-r),0);
+      const rim=Math.exp(-d*1.7), total=Math.exp(-d*.5)*.015+rim*.028;
+      let nx=cx-.5, ny=cy-.5; const l=Math.hypot(nx,ny)||1; nx/=l; ny/=l;
+      const corner=Math.exp(-(Math.max(Math.min(cx,1-cx),Math.min(cy,1-cy))*m)*.3)*.06;
+      const ripple=Math.sin(d/m*25)*.26*rim, i=y*W+x;
+      dx[i]=(nx*(total+corner)-ny*ripple)*pw; dy[i]=(ny*(total+corner)+nx*ripple)*ph;
+      max=Math.max(max,Math.abs(dx[i]),Math.abs(dy[i]));
+    }
+    const scale=Math.max(max*2,1e-4), bias=scale*(128/255-.5), c=document.createElement('canvas'); c.width=W; c.height=H;
+    const ctx=c.getContext('2d'), img=ctx.createImageData(W,H), b=v=>Math.max(0,Math.min(255,Math.round(v)));
+    for(let i=0;i<W*H;i++){ img.data.set([b(255*(.5+(dx[i]-bias)/scale)),b(255*(.5+(dy[i]-bias)/scale)),128,255],i*4) }
+    ctx.putImageData(img,0,0);
+    const blur=2*.35, mg=scale/2+3*blur;
+    svg.innerHTML=`<defs><filter id="${id}" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB" x="${-mg}" y="${-mg}" width="${w+2*mg}" height="${h+2*mg}">
+      <feImage href="${c.toDataURL()}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>
+      <feDisplacementMap in="SourceGraphic" in2="map" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="${blur}"/></filter></defs>`;
+    el.style.backdropFilter=el.style.webkitBackdropFilter=`url(#${id})`;
+  };
+  let raf, t; const queue=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(build) };
+  new ResizeObserver(queue).observe(el);
+  addEventListener('resize',()=>{ clearTimeout(t); t=setTimeout(queue,180) });
+}
+liquidGlass($nav,'lg-nav');
+
 function render(){
-  $app.innerHTML = (view==='today'?today():history()) + `<nav>
-    <button data-view="today" aria-label="Today" aria-current="${view==='today'?'page':'false'}">${I.today}</button>
-    <button data-view="history" aria-label="History" aria-current="${view==='history'?'page':'false'}">${I.hist}</button></nav>`;
+  $app.innerHTML = view==='today'?today():history();
+  $nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===view?'page':'false'));
 }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800) }
 
@@ -244,7 +295,6 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 $app.addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return; const ds=b.dataset;
   if(ds.day){ cur=+ds.day; open=null }
-  else if(ds.view){ view=ds.view; scrollTo(0,0) }
   else if(ds.toggle){ open = open===ds.toggle?null:ds.toggle }
   else if(ds.add){ const s=draft()[ds.add]; s.push({w:s.at(-1)?.w||'',r:'',done:false}); save() }
   else if(ds.tick){
