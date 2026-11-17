@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F3F1EC">
+<meta name="theme-color" content="#F3F1EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
 <title>Lift Log</title>
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -18,7 +19,22 @@
   --accent:#D9701E; --accent-soft:#F4CFAE; --idle:#E2DED5; --head:#D3CEC4; --ok:#2F7D4F;
   --spring:linear(0,.009,.035 2.1%,.141,.281 6.7%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1);
   --r:16px; --shadow:0 6px 20px -8px rgba(60,45,25,.18);
+  --placeholder:#9A958C; --disabled:#DCD7CE; --ok-soft:#EAF3ED; --on-ink:#fff;
+  --lens:rgba(28,27,25,.07); --lens-press:rgba(255,255,255,.45); --lens-rim:rgba(255,255,255,.9); --lens-rim2:rgba(255,255,255,.5);
+  --glass-border:rgba(30,33,45,.12); --glass-shadow:0 10px 30px rgba(30,33,45,.12); --rim-top:rgba(255,255,255,.55);
+  --mesh1:rgba(217,112,30,.16); --mesh2:rgba(244,207,174,.45); --mesh3:rgba(244,207,174,.35);
+  color-scheme:light;
 }
+@media (prefers-color-scheme:dark){:root{
+  --bg:#121110; --surface:#1E1D1B; --ink:#F2EFE9; --muted:#A39E95; --line:#2E2C29;
+  --accent:#E8843A; --accent-soft:#7A4A26; --idle:#35322E; --head:#45413C; --ok:#5DBB83;
+  --shadow:0 6px 20px -8px rgba(0,0,0,.6);
+  --placeholder:#6F6A62; --disabled:#3A3733; --ok-soft:#1D3326; --on-ink:#121110;
+  --lens:rgba(255,255,255,.1); --lens-press:rgba(255,255,255,.16); --lens-rim:rgba(255,255,255,.3); --lens-rim2:rgba(255,255,255,.12);
+  --glass-border:rgba(255,255,255,.12); --glass-shadow:0 10px 30px rgba(0,0,0,.5); --rim-top:rgba(255,255,255,.2);
+  --mesh1:rgba(232,132,58,.14); --mesh2:rgba(122,74,38,.28); --mesh3:rgba(122,74,38,.22);
+  color-scheme:dark;
+}}
 *{box-sizing:border-box;margin:0}
 html{background:var(--bg)}
 body{isolation:isolate;font-family:Manrope,system-ui,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
@@ -32,7 +48,7 @@ header h1{font-size:30px;font-weight:800;letter-spacing:-.03em;margin-top:2px}
 .chips{display:flex;gap:8px;overflow-x:auto;margin:16px -16px 0;padding:0 16px 4px;scrollbar-width:none}
 .chip{flex:none;padding:8px 14px;border-radius:999px;background:var(--surface);font-size:14px;font-weight:600;color:var(--muted);box-shadow:var(--shadow)}
 .chip b{color:var(--ink);font-weight:700;margin-right:4px}
-.chip[aria-pressed=true]{background:var(--ink);color:#fff}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--on-ink)}
 .chip[aria-pressed=true] b{color:var(--accent-soft)}
 section{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);margin-top:16px}
 .map{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px 8px;align-items:center}
@@ -64,30 +80,30 @@ section{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow
 .row .i{font-size:13px;font-weight:700;color:var(--muted)}
 .field{position:relative}
 .field input{width:100%;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 34px 0 12px;font-size:16px;font-weight:700;background:var(--bg)}
-.field input::placeholder{color:#9A958C;font-weight:600}
+.field input::placeholder{color:var(--placeholder);font-weight:600}
 .field span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);font-weight:600;pointer-events:none}
-.row.done input{border-color:transparent;background:#EAF3ED}
+.row.done input{border-color:transparent;background:var(--ok-soft)}
 .addset{font-size:14px;font-weight:700;color:var(--accent);padding:6px 0;display:inline-flex;gap:6px;align-items:center}
 .run{padding:16px;display:grid;gap:12px}
 .run .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .run label{font-size:13px;font-weight:700;color:var(--muted);display:grid;gap:6px}
 .pace{display:flex;justify-content:space-between;align-items:baseline;padding-top:4px}
 .pace strong{font-size:28px;font-weight:800;letter-spacing:-.02em}
-.finish{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:calc(100% - 32px);max-width:398px;height:54px;border-radius:14px;background:var(--ink);color:#fff;font-weight:700;font-size:16px;box-shadow:0 10px 24px -10px rgba(0,0,0,.45)}
-.finish:disabled{background:#B9B4AA;box-shadow:none;cursor:not-allowed}
+.finish{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:calc(100% - 32px);max-width:398px;height:54px;border-radius:14px;background:var(--ink);color:var(--on-ink);font-weight:700;font-size:16px;box-shadow:0 10px 24px -10px rgba(0,0,0,.45)}
+.finish:disabled{background:var(--disabled);color:var(--muted);box-shadow:none;cursor:not-allowed}
 /* liquid-glass recipe: colorless 6% tint, three-inset rim, hairline border, blur(3px) fallback; refraction added by JS on Chromium */
-.glass{border:1px solid rgba(30,33,45,.12);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(179,179,179,.06));
-  box-shadow:0 10px 30px rgba(30,33,45,.12),inset 0 1px 0 rgba(255,255,255,.55),inset 0 0 0 1px rgba(255,255,255,.12),inset 0 -1px 0 rgba(255,255,255,.06);
+.glass{border:1px solid var(--glass-border);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(179,179,179,.06));
+  box-shadow:var(--glass-shadow),inset 0 1px 0 var(--rim-top),inset 0 0 0 1px rgba(255,255,255,.12),inset 0 -1px 0 rgba(255,255,255,.06);
   -webkit-backdrop-filter:blur(3px) saturate(125%);backdrop-filter:blur(3px) saturate(125%)}
 /* segmented glass control: a lens marks the selected item and follows the finger while dragging */
 .seg{position:relative;scale:1;transition:scale .55s var(--spring);display:flex;gap:4px;padding:5px;border-radius:999px;touch-action:none;user-select:none;-webkit-user-select:none}
 .seg button{position:relative;z-index:1;display:grid;place-items:center;border-radius:999px;color:var(--muted);transition:color .3s cubic-bezier(.16,1,.3,1),scale .5s var(--spring);-webkit-tap-highlight-color:transparent}
 .seg button[aria-current=page]{color:var(--ink)}
 .seg button.hover{scale:1.08}
-.lens{position:absolute;top:5px;left:0;width:0;height:0;border-radius:999px;pointer-events:none;background:rgba(28,27,25,.07);
+.lens{position:absolute;top:5px;left:0;width:0;height:0;border-radius:999px;pointer-events:none;background:var(--lens);
   transition:translate .55s var(--spring),width .55s var(--spring),scale .55s var(--spring),background .3s,box-shadow .3s}
-.seg.pressing .lens{scale:1.18;background:rgba(255,255,255,.45);
-  box-shadow:0 6px 18px -6px rgba(40,30,15,.3),inset 0 1px 0 rgba(255,255,255,.9),inset 0 0 0 1px rgba(255,255,255,.5)}
+.seg.pressing .lens{scale:1.18;background:var(--lens-press);
+  box-shadow:0 6px 18px -6px rgba(40,30,15,.3),inset 0 1px 0 var(--lens-rim),inset 0 0 0 1px var(--lens-rim2)}
 .seg.dragging .lens{transition:scale .55s var(--spring),background .3s,box-shadow .3s}
 nav{position:fixed!important;z-index:10;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom))}
 nav.pressing{scale:1.06}
@@ -106,9 +122,9 @@ nav button[aria-current=page] svg{animation:pop .6s var(--spring)}
 .chip:active,.addset:active,.finish:not(:disabled):active{scale:.93}
 .exhead:active{scale:.985}
 body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:
-  radial-gradient(28rem 22rem at 15% 92%,rgba(217,112,30,.16),transparent 60%),
-  radial-gradient(24rem 20rem at 90% 80%,rgba(244,207,174,.45),transparent 62%),
-  radial-gradient(30rem 24rem at 80% 5%,rgba(244,207,174,.35),transparent 60%)}
+  radial-gradient(28rem 22rem at 15% 92%,var(--mesh1),transparent 60%),
+  radial-gradient(24rem 20rem at 90% 80%,var(--mesh2),transparent 62%),
+  radial-gradient(30rem 24rem at 80% 5%,var(--mesh3),transparent 60%)}
 .hist .day{padding:14px 16px;border-top:1px solid var(--line)}
 .hist .day:first-of-type{border-top:0}
 .hist .dh{display:flex;justify-content:space-between;font-weight:700}
@@ -116,7 +132,7 @@ body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .hist p{font-size:14px;color:var(--muted);margin-top:4px}
 .hist p b{color:var(--ink);font-weight:600}
 .empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:15px}
-.toast{position:fixed;left:50%;top:16px;transform:translate(-50%,-80px);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.toast{position:fixed;left:50%;top:16px;transform:translate(-50%,-80px);background:var(--ink);color:var(--on-ink);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;transition:transform .4s cubic-bezier(.16,1,.3,1)}
 .toast.show{transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
